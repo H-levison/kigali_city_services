@@ -64,6 +64,11 @@ The project follows a modular architecture to separate UI, logic, and data:
     ```
 
 ## 📸 Screenshots
-* *
+![Screenshot_2026-03-09-23-31-12-366_com example kigali_city_services](https://github.com/user-attachments/assets/a2c3b818-138b-4ae9-aa2f-8808814d71a6)
+![Screenshot_2026-03-09-23-30-59-660_com example kigali_city_services](https://github.com/user-attachments/assets/b0f92ce9-83ff-4191-84da-4b743c18986d)
+![Screenshot_2026-03-09-23-30-57-368_com example kigali_city_services](https://github.com/user-attachments/assets/1d98d0d7-8a77-47cf-bca1-e919665bea61)
+![Screenshot_2026-03-09-23-31-05-173_com example kigali_city_services](https://github.com/user-attachments/assets/a4a7ab00-f190-413e-a42c-ef3bbb475c5d)
+
+
 
 ---
