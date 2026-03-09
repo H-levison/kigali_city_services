@@ -44,7 +44,7 @@ The project follows a modular architecture to separate UI, logic, and data:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/H-levison/kigali_city_services.git](https://github.com/your-username/kigali_city_services.git)
+    git clone [https://github.com/H-levison/kigali_city_services.git](https://github.com/H-levison/kigali_city_services.git)
     ```
 2.  **Install dependencies:**
     ```bash
@@ -72,3 +72,4 @@ The project follows a modular architecture to separate UI, logic, and data:
 
 
 ---
+
