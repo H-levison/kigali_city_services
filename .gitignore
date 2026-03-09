@@ -58,3 +58,5 @@ Pods/
 *.iws
 *.ipr
 cmake-build-*/
+
+.env
