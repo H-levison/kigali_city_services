@@ -23,7 +23,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _contactCtrl;
-  final _locationSearchCtrl = TextEditingController(); // Search Bar Controller
+  final _locationSearchCtrl = TextEditingController();
 
   // Logic Variables
   final PlacesService _placesService = PlacesService();
@@ -36,7 +36,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize Controllers (Pre-fill if editing)
     _nameCtrl = TextEditingController(text: widget.serviceToEdit?.name ?? '');
     _descCtrl = TextEditingController(text: widget.serviceToEdit?.description ?? '');
     _contactCtrl = TextEditingController(text: widget.serviceToEdit?.contact ?? '');
@@ -59,14 +58,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
     super.dispose();
   }
 
-  // SEARCH LOGIC
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       if (query.isNotEmpty) {
-        debugPrint("Searching for: $query"); // DEBUG: Check console for this
         final results = await _placesService.fetchSuggestions(query);
-        debugPrint("Found ${results.length} results"); // DEBUG: Check console
         setState(() => _suggestions = results);
       } else {
         setState(() => _suggestions = []);
@@ -81,7 +77,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
         _selectedLocation = GeoPoint(details['lat'], details['lng']);
         _selectedAddress = details['address'];
         _locationSearchCtrl.text = _selectedAddress!;
-        _suggestions = []; // Hide the list after selection
+        _suggestions = [];
       });
     }
   }
@@ -89,12 +85,20 @@ class _AddListingScreenState extends State<AddListingScreen> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedLocation == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a location from the list")));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Please select a location from the list"))
+        );
         return;
       }
 
       final user = context.read<AuthService>().currentUser;
       if (user == null) return;
+
+      // Ensure we have a valid creator name
+      String creatorName = user.displayName ?? "User";
+
+      // If Auth name is missing, we could fetch from Firestore,
+      // but since we updated signUp to updateDisplayName, it should be there.
 
       final service = KigaliService(
         id: widget.serviceToEdit?.id ?? '',
@@ -104,7 +108,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
         address: _selectedAddress!,
         contact: _contactCtrl.text,
         createdBy: user.uid,
-        creatorName: user.displayName ?? "Unknown",
+        creatorName: creatorName,
         location: _selectedLocation!,
         imageUrl: widget.serviceToEdit?.imageUrl ?? '',
       );
@@ -119,7 +123,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
         }
         if (mounted) Navigator.pop(context);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Operation failed")));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Operation failed"))
+          );
+        }
       }
     }
   }
@@ -127,40 +135,48 @@ class _AddListingScreenState extends State<AddListingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.serviceToEdit == null ? "Add Listing" : "Edit Listing")),
+      backgroundColor: const Color(0xFF0F1C36),
+      appBar: AppBar(
+        title: Text(widget.serviceToEdit == null ? "Add Listing" : "Edit Listing"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              // 1. NAME INPUT
               TextFormField(
                 controller: _nameCtrl,
-                style: const TextStyle(color: Colors.black), // Force black text
-                decoration: const InputDecoration(labelText: "Service Name"),
+                style: const TextStyle(color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: "Service Name",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 16),
-
-              // 2. LOCATION SEARCH (Updated)
               Column(
                 children: [
                   TextFormField(
                     controller: _locationSearchCtrl,
                     style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
-                      labelText: "Search Location (e.g., Kigali Heights)",
-                      suffixIcon: Icon(Icons.search),
+                    decoration: InputDecoration(
+                      labelText: "Search Location",
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onChanged: _onSearchChanged,
-                    validator: (v) => _selectedLocation == null ? "Please select a location" : null,
                   ),
-                  // Suggestion List
                   if (_suggestions.isNotEmpty)
                     Container(
                       color: Colors.white,
-                      height: 200, // Limit height
+                      height: 200,
                       child: ListView.builder(
                         itemCount: _suggestions.length,
                         itemBuilder: (context, index) {
@@ -175,47 +191,60 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // 3. CATEGORY DROPDOWN (Fixed Contrast)
               DropdownButtonFormField<String>(
                 value: _category,
-                dropdownColor: Colors.white, // FIX: Force background white
-                style: const TextStyle(color: Colors.black, fontSize: 16), // FIX: Force text black
+                dropdownColor: Colors.white,
+                style: const TextStyle(color: Colors.black),
                 items: ["Café", "Hospital", "Park", "Police", "Pharmacy", "Library", "Restaurant", "Tourist Attraction"]
                     .map((e) => DropdownMenuItem(
                   value: e,
-                  child: Text(e, style: const TextStyle(color: Colors.black)), // FIX: Item text black
-                ))
-                    .toList(),
+                  child: Text(e, style: const TextStyle(color: Colors.black)),
+                )).toList(),
                 onChanged: (v) => setState(() => _category = v.toString()),
-                decoration: const InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    labelText: "Category"
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  labelText: "Category",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
-
-              // 4. CONTACT & DESC
               TextFormField(
                 controller: _contactCtrl,
                 style: const TextStyle(color: Colors.black),
-                decoration: const InputDecoration(labelText: "Contact Number"),
+                decoration: InputDecoration(
+                  labelText: "Contact Number",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descCtrl,
                 style: const TextStyle(color: Colors.black),
-                decoration: const InputDecoration(labelText: "Description"),
+                decoration: InputDecoration(
+                  labelText: "Description",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
-
-              // 5. SUBMIT BUTTON
               ElevatedButton(
                 onPressed: _submit,
-                child: Text(widget.serviceToEdit == null ? "Create Listing" : "Update Listing"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF4C446),
+                  foregroundColor: const Color(0xFF0F1C36),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  widget.serviceToEdit == null ? "Create Listing" : "Update Listing",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
