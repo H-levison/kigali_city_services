@@ -8,14 +8,17 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Updated Sign Up: Sends Verification Email immediately
   Future<String?> signUp({required String email, required String password, required String name}) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       User? user = result.user;
 
       if (user != null) {
-        // Create user profile in Firestore
+        // 1. Update Firebase Auth Profile Name (CRUCIAL for user.displayName)
+        await user.updateDisplayName(name);
+        await user.reload();
+
+        // 2. Create user profile in Firestore
         await _db.collection('users').doc(user.uid).set({
           'name': name,
           'email': email,
@@ -23,7 +26,7 @@ class AuthService {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        // SEND VERIFICATION EMAIL
+        // 3. Send Verification Email
         await user.sendEmailVerification();
         return null;
       }
@@ -33,14 +36,13 @@ class AuthService {
     }
   }
 
-  // Updated Sign In: Checks for Verification
   Future<String?> signIn({required String email, required String password}) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(email: email, password: password);
 
       if (result.user != null) {
         if (!result.user!.emailVerified) {
-          await _auth.signOut(); // Kick them out
+          await _auth.signOut();
           return "Please verify your email address. Check your inbox.";
         }
       }
